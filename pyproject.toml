@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "chaotic-carbon-networks"
+version = "0.1.0"
+description = ""
+authors = ["Tobias Hölzer <tobiashoelzer@hotmail.com>"]
+readme = "README.md"
+packages = [{include = "chaotic_carbon_networks"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+numpy = "^1.26.4"
+pandas = "^2.2.1"
+xarray = "^2024.2.0"
+rioxarray = "^0.15.1"
+matplotlib = "^3.8.3"
+seaborn = "^0.13.2"
+rich = "^13.7.1"
+cartopy = "^0.22.0"
+geopandas = "^0.14.3"
+ipykernel = "^6.29.3"
+ipywidgets = "^8.1.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
