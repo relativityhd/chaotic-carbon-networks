@@ -14,20 +14,16 @@ ResampleMethod = Literal["mean", "max", "min", "sum"]
 CorrectMethod = Literal["month", "week", "weekday"]
 
 
-def get_cached_fname(resample: int = None, method: ResampleMethod = "mean", correctby: CorrectMethod = None):
+def get_cached_fname(resample: int = None, method: ResampleMethod = "mean"):
     fname = "co2_concat"
     if resample:
-        fname += f"_{resample}x{resample}_{method}ed"
-    if correctby:
-        fname += f"_{correctby}ly"
+        fname += f"_{resample}x_{method}ed"
     fname += ".nc"
     return fname
 
 
-def concat_data(
-    resample: int = None, method: ResampleMethod = "mean", correctby: CorrectMethod = None, force=False
-) -> xr.DataArray:
-    fname = get_cached_fname(resample, method, correctby)
+def concat_data(resample: int = None, method: ResampleMethod = "mean", force=False) -> xr.DataArray:
+    fname = get_cached_fname(resample, method)
     cached = CACHE_DIR / fname
     if cached.exists() and not force:
         print(f"Loading cached data from {cached}")
@@ -52,20 +48,10 @@ def concat_data(
     co2 = co2.rename({"latitude": "lat", "longitude": "lon", "nday": "time"})
     co2 = co2.sortby("time")
 
-    # Make anomaly correction
-    unit = "d kgC/h"
-    name = "Carbon Dioxide Emissions Anomaly"
-    if correctby == "month":
-        co2 = co2.groupby("time.month") - co2.groupby("time.month").mean("time", keep_attrs=True)
-    elif correctby == "week":
-        co2 = co2.groupby("time.week") - co2.groupby("time.week").mean("time", keep_attrs=True)
-    elif correctby == "weekday":
-        co2 = co2.groupby("time.weekday") - co2.groupby("time.weekday").mean("time", keep_attrs=True)
-    else:
-        # No correction
-        unit = "kgC/h"
-        name = "Carbon Dioxide Emissions"
-    co2.attrs = {"units": unit, "long_name": name}
+    # Convert from kgC/h to kgC
+    co2 = co2 * 24
+
+    co2.attrs = {"units": "kgC", "long_name": "Carbon Dioxide Emissions"}
     co2.name = fname.strip(".nc")
 
     print(f"Saving data to {cached}")

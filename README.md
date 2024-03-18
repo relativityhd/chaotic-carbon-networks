@@ -33,3 +33,30 @@ cat *.tar.gz | tar -xvf - -C ../original -z -i
 ## Data from
 
 [Population (GHSL) from EU](https://ghsl.jrc.ec.europa.eu/download.php?ds=pop)
+
+## Methods and outcomes
+
+```mermaid
+graph TB;
+    a(Raw CO2 Data);
+    b(CO2 Anomaly);
+    c(Similarity Matrix);
+    d(Adjencency Matrix);
+    e(Link-Length Adjencency Matrix);
+    f[["Vertex-Connectivity\n(Degree)"]];
+    g[["Area Weighted Vertex-Connectivity\n(Lat-Corrected Degree)"]];
+    h[[Avg. Vertex Link-Length]];
+
+    a -->|Processing and anomaly corrections| b;
+    b --> c;
+    c --> Network;
+
+    subgraph Network;
+      direction TB;
+      d --> f;
+      d --> g;
+      d --> e;
+      e --> h;
+    end;
+
+```

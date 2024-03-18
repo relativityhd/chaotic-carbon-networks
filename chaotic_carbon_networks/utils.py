@@ -1,13 +1,11 @@
 import xarray as xr
 import geopandas as gpd
 import regionmask
-import rioxarray as rxr
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 from pathlib import Path
-from rich import print
 
 
 # Load ocean-mask
@@ -19,27 +17,9 @@ def mask_oceans(da: xr.DataArray):
     return da.where(mask.isnull())
 
 
-DATA_DIR = Path(__file__).parent.parent / "data" / "population"
-CACHE_DIR = DATA_DIR / "cache"
-CACHE_DIR.mkdir(exist_ok=True, parents=True)
-
-
-def mask_population(da: xr.DataArray, correct=False, force=False):
-    cached = CACHE_DIR / "GHS_POP_E2020_GLOBE_R2023A_4326_30ss_V1_0_resampled.nc"
-    if cached.exists() and not force:
-        print(f"Loading cached data from {cached}")
-        pop = xr.open_dataarray(cached)
-    else:
-        pop = rxr.open_rasterio("../data/population/GHS_POP_E2020_GLOBE_R2023A_4326_30ss_V1_0.tif").squeeze("band")
-        pop = pop.rename({"x": "lon", "y": "lat"})
-        pop = pop.interp_like(da, method="nearest")
-        print(f"Saving cached data to {cached}")
-        pop.to_netcdf(cached)
-
-    if correct:
-        da = da * pop
-    da = da.where(pop > 10)
-    return da
+def mask_poles(da: xr.DataArray):
+    """Only use data between 60°S and 60°N"""
+    return da.where((da.lat > -60) & (da.lat < 60))
 
 
 CKWARGS = dict(
