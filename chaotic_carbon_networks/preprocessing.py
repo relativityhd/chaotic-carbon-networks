@@ -3,26 +3,28 @@ from rich.progress import track
 from rich import print
 import xarray as xr
 from typing import Literal
+from datetime import datetime
 
 
-DATA_DIR = Path(__file__).parent.parent / "data" / "graced"
-RAW_DIR = DATA_DIR / "original"
-CACHE_DIR = DATA_DIR / "cache"
-CACHE_DIR.mkdir(exist_ok=True, parents=True)
+DATA_DIR = Path(__file__).parent.parent / "data"
 
 ResampleMethod = Literal["mean", "max", "min", "sum"]
 CorrectMethod = Literal["month", "week", "weekday"]
 
 
 def get_cached_fname(resample: int = None, method: ResampleMethod = "mean"):
-    fname = "co2_concat"
+    fname = "graced_co2_concat"
     if resample:
         fname += f"_{resample}x_{method}ed"
     fname += ".nc"
     return fname
 
 
-def concat_data(resample: int = None, method: ResampleMethod = "mean", force=False) -> xr.DataArray:
+def concat_graced_data(resample: int = None, method: ResampleMethod = "mean", force=False) -> xr.DataArray:
+    RAW_DIR = DATA_DIR / "graced" / "original"
+    CACHE_DIR = DATA_DIR / "graced" / "cache"
+    CACHE_DIR.mkdir(exist_ok=True, parents=True)
+
     fname = get_cached_fname(resample, method)
     cached = CACHE_DIR / fname
     if cached.exists() and not force:
@@ -58,3 +60,35 @@ def concat_data(resample: int = None, method: ResampleMethod = "mean", force=Fal
     co2.to_netcdf(cached)
 
     return co2
+
+
+def concat_airs_data(force=False) -> xr.Dataset:
+    RAW_DIR = DATA_DIR / "aqua-airs" / "raw"
+    CACHE_DIR = DATA_DIR / "aqua-airs" / "cache"
+    CACHE_DIR.mkdir(exist_ok=True, parents=True)
+
+    fname = "aqua_airs_concat.nc"
+    cached = CACHE_DIR / fname
+    if cached.exists() and not force:
+        print(f"Loading cached data from {cached}")
+        return xr.open_dataset(cached)
+
+    files = list(RAW_DIR.glob("*.nc.nc4"))
+    datasets = []
+    for file in track(files):
+        date = file.stem.split(".")[3]
+        date = datetime.strptime(date, "%Y%m%d")
+        ds = xr.open_dataset(file)
+        ds = ds.expand_dims({"time": [date]})
+        datasets.append(ds)
+
+    airs = xr.concat(datasets, dim="time")
+    airs = airs.sortby("time")
+
+    # Correct co variable according to documentation
+    airs["co_mmr_midtrop"] = airs["co_mmr_midtrop"] * 28.01 / 44.01
+
+    print(f"Saving data to {cached}")
+    airs.to_netcdf(cached)
+
+    return airs

@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Tobias Hölzer <tobiashoelzer@hotmail.com>"]
 readme = "README.md"
-packages = [{include = "chaotic_carbon_networks"}]
+packages = [{ include = "chaotic_carbon_networks" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -27,7 +27,12 @@ pyqt5 = "5.15.2"
 requests = "^2.31.0"
 tqdm = "^4.66.2"
 dask = "^2024.3.1"
-
+h3 = "^3.7.7"
+numba = "^0.59.1"
+lovely-numpy = "^0.2.11"
+networkx = "^3.2.1"
+scikit-learn = "^1.4.1.post1"
+fast-histogram = "^0.12"
 
 [build-system]
 requires = ["poetry-core"]

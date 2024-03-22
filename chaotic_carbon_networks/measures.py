@@ -1,10 +1,30 @@
 import numpy as np
 import xarray as xr
+import networkx as nx
+import pandas as pd
+
+from chaotic_carbon_networks.hex import hex_to_latlon
 
 
 def calc_degrees(adj_mtx: xr.DataArray, weighted=True):
     """Calculate degrees of vertices in adjacency matrix"""
-    degrees = adj_mtx.sum(dim="vertex_other", keep_attrs=True).unstack("vertex")
+    is_hex = "hex_res" in adj_mtx.attrs
+    assert is_hex and not weighted, "Weighted degrees are not supported for hexagonal coordinates"
+
+    degrees = adj_mtx.sum(dim="vertex_other", keep_attrs=True)
+
+    if is_hex:
+        degrees.attrs = {
+            "long_name": "Connectivity of vertices",
+            "var_desc": "Connectivity",
+            "units": "°",
+            "valid_range": (0, np.inf),
+            "actual_range": (degrees.min().item(), degrees.max().item()),
+            "hex_res": adj_mtx.attrs["hex_res"],
+        }
+        return degrees
+
+    degrees = degrees.unstack("vertex")
 
     if weighted:
         lats = degrees.coords["lat"]
@@ -33,7 +53,10 @@ def calc_avg_link_length(ll_adj_mtx: xr.DataArray, weighted=False):
     """Calculate average link length of vertices in adjacency matrix"""
 
     # This is experimental. The idea behind it is the following: The average link length is calculated as the mean of all the link-lengths of a vertex. However, this does not take into account the fact that some vertices are more closer to each other than others. E.g. a cluster in one corner and a few points on the other side of the map. To encounter this, I try to add weights to the link-lengths. Each weight represents the pot. average distance of a vertex to all other vertices. This weight gets area-corrected. This is then multiplied with the link-lengths and the mean is calculated.
+    is_hex = "hex_res" in ll_adj_mtx.attrs
+
     if weighted:
+        assert not is_hex, "Weighted average link length is not supported for hexagonal coordinates"
         lats_i = ll_adj_mtx.coords["lat"] * np.pi / 180
         lons_i = ll_adj_mtx.coords["lon"] * np.pi / 180
         lats_j = ll_adj_mtx.coords["lat_other"] * np.pi / 180
@@ -65,7 +88,20 @@ def calc_avg_link_length(ll_adj_mtx: xr.DataArray, weighted=False):
         }
         return avg_link_length
 
-    avg_link_length = ll_adj_mtx.where(ll_adj_mtx > 0).mean(dim="vertex_other", keep_attrs=True).unstack("vertex")
+    avg_link_length = ll_adj_mtx.where(ll_adj_mtx > 0).mean(dim="vertex_other", keep_attrs=True)
+
+    if is_hex:
+        avg_link_length.attrs = {
+            "long_name": "Average link length of vertices",
+            "var_desc": "Average link length",
+            "units": "km",
+            "valid_range": (0, np.inf),
+            "actual_range": (avg_link_length.min().item(), avg_link_length.max().item()),
+            "hex_res": ll_adj_mtx.attrs["hex_res"],
+        }
+        return avg_link_length
+
+    avg_link_length = avg_link_length.unstack("vertex")
     avg_link_length.attrs = {
         "long_name": "Average link length of vertices",
         "var_desc": "Average link length",
@@ -75,3 +111,39 @@ def calc_avg_link_length(ll_adj_mtx: xr.DataArray, weighted=False):
     }
 
     return avg_link_length
+
+
+def calc_betweenness(adj_mtx: xr.DataArray, k: int = None):
+    """Calculate betweenness centrality of vertices in adjacency matrix"""
+    is_hex = "hex_res" in adj_mtx.attrs
+    # Make a graph based on the adjacency matrix
+    G = nx.from_numpy_array(adj_mtx.values)
+    bc = nx.betweenness_centrality(G, k=k)
+
+    if is_hex:
+        vertex_coords = adj_mtx.coords["vertex"].values
+        betweenness = xr.DataArray(list(bc.values()), dims="vertex", coords={"vertex": adj_mtx.vertex.values.copy()})
+        betweenness.attrs = {
+            "long_name": "Betweenness centrality of vertices",
+            "var_desc": "Betweenness centrality",
+            "units": "",
+            "valid_range": (0, np.inf),
+            "actual_range": (betweenness.min().item(), betweenness.max().item()),
+            "hex_res": adj_mtx.attrs["hex_res"],
+        }
+        return betweenness
+
+    vertex_coords = adj_mtx.coords["vertex"].values
+    vertex_multiindex = pd.MultiIndex.from_tuples(vertex_coords, names=("lat", "lon"))
+    betweenness = xr.DataArray(list(bc.values()), dims="vertex", coords={"vertex": vertex_multiindex})
+    betweenness = betweenness.unstack("vertex")
+
+    betweenness.attrs = {
+        "long_name": "Betweenness centrality of vertices",
+        "var_desc": "Betweenness centrality",
+        "units": "",
+        "valid_range": (0, np.inf),
+        "actual_range": (betweenness.min().item(), betweenness.max().item()),
+    }
+
+    return betweenness

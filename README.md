@@ -77,10 +77,18 @@ graph TB;
     f[["Vertex-Connectivity\n(Degree)"]];
     g[["Area Weighted Vertex-Connectivity\n(Lat-Corrected Degree)"]];
     h[[Avg. Vertex Link-Length]];
+    k[["Vertex-Betweenness"]];
 
     a -->|Processing and anomaly corrections| b;
-    b --> c;
-    c --> Network;
+    b --> Matrix;
+    Matrix --> Network;
+
+    subgraph Matrix;
+      direction TB;
+      c(Pearson Correlation);
+      i(Lagged Pearson Correlation);
+      j(Mututal Information)
+    end;
 
     subgraph Network;
       direction TB;
@@ -88,6 +96,7 @@ graph TB;
       d --> g;
       d --> e;
       e --> h;
+      d --> k;
     end;
 
 ```
