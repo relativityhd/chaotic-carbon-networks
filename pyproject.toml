@@ -1,3 +1,22 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "chaotic-carbon-networks"
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Rust",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "chaotic_carbon_networks.rust_chaotic_carbon_networks"
+
+
 [tool.poetry]
 name = "chaotic-carbon-networks"
 version = "0.1.0"
@@ -26,7 +45,6 @@ scipy = "^1.12.0"
 pyqt5 = "5.15.2"
 requests = "^2.31.0"
 tqdm = "^4.66.2"
-dask = "^2024.3.1"
 h3 = "^3.7.7"
 numba = "^0.59.1"
 lovely-numpy = "^0.2.11"
@@ -34,6 +52,7 @@ networkx = "^3.2.1"
 scikit-learn = "^1.4.1.post1"
 fast-histogram = "^0.12"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+
+# [build-system]
+# requires = ["poetry-core"]
+# build-backend = "poetry.core.masonry.api"

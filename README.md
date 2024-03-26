@@ -1,9 +1,22 @@
 # chaotic-carbon-networks
 
+Prereq:
+
+- [Rust](https://www.rust-lang.org/tools/install)
+- [Pipx](https://pipx.pypa.io/stable/installation/) (for installing maturin)
+- [Maturin](https://www.maturin.rs/installation)
+- [Poetry](https://python-poetry.org/docs/)
+
 Create Environment:
 
 ```sh
 poetry install
+```
+
+Install RustLibs in dev mode. (Needs to be run after each change in the rust code)
+
+```sh
+maturin develop -r
 ```
 
 Use Environment:
