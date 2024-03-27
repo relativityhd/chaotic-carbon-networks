@@ -9,6 +9,7 @@ name = "chaotic_carbon_networks"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.20.0", features = ["extension-module"] }
+pyo3 = { version = "0.20.3", features = ["extension-module"] }
 numpy = "0.20"
+ndarray = { version = "0.15.6", features = ["rayon"] }
 rayon = "1.9.0"

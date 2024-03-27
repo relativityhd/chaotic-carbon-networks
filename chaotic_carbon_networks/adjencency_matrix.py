@@ -5,7 +5,7 @@ from rich import print, progress
 import h3
 
 # Own rust library
-from fast_mutual_information import mind
+from chaotic_carbon_networks.rust_chaotic_carbon_networks import mind
 
 from chaotic_carbon_networks.hex import hexgrid
 
@@ -151,7 +151,7 @@ def calc_lagged_similarity_matrix(x, tau_min: int = None, tau_max: int = None):
         similarities.append(similarity)
 
     similarities = xr.concat(similarities, dim="tau")
-    similarity_matrix = similarities.max(dim="tau") / similarities.std(dim="tau")
+    similarity_matrix = similarities.max(dim="tau")  # / similarities.std(dim="tau")
     similarity_matrix.attrs = similarities.attrs
     return similarity_matrix
 

@@ -16,6 +16,7 @@ poetry install
 Install RustLibs in dev mode. (Needs to be run after each change in the rust code)
 
 ```sh
+poetry shell
 maturin develop -r
 ```
 

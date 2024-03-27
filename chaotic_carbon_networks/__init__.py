@@ -1,1 +1,1 @@
-from chaotic_carbon_networks.chaotic_carbon_networks import mind
+from chaotic_carbon_networks.rust_chaotic_carbon_networks import mind, lapend
