@@ -5,8 +5,9 @@ import xarray as xr
 from typing import Literal
 from datetime import datetime
 
+from chaotic_carbon_networks import ROOT
 
-DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR = ROOT / "data"
 
 ResampleMethod = Literal["mean", "max", "min", "sum"]
 CorrectMethod = Literal["month", "week", "weekday"]

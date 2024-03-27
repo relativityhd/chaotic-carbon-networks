@@ -7,12 +7,18 @@ from numba import njit
 import pickle
 from pathlib import Path
 
+from chaotic_carbon_networks import ROOT
+
 ResampleMethod = Literal["mean", "max", "min", "sum"]
 
 
-DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR = ROOT / "data"
 CACHE_DIR = DATA_DIR / "hex" / "cache"
 CACHE_DIR.mkdir(exist_ok=True, parents=True)
+
+
+def axis_is_hex(x, dim):
+    return x.coords[dim].attrs.get("hex_res", False)
 
 
 def latlon_to_hex(x: xr.DataArray, hex_res: int = 2):
@@ -82,7 +88,7 @@ def hexgrid(x: xr.DataArray, method: ResampleMethod = "mean", hex_res: int = 2):
 
     # x_stacked = hex_to_latlon(x_stacked, final_res=final_res)
 
-    x_stacked.attrs["hex_res"] = hex_res
+    x_stacked.coords["vertex"].attrs["hex_res"] = hex_res
 
     return x_stacked
 
@@ -97,11 +103,11 @@ def filledgrid_from_hexgrid(x: xr.DataArray, res=1) -> xr.DataArray:
     Returns:
         _type_: _description_
     """
-    assert "hex_res" in x.attrs, "hex_res must be in x.attrs"
     assert len(x.dims) == 1, "x must have 1 dimension"
     assert "vertex" in x.dims, "vertex must be in x.dims"
+    assert "hex_res" in x.coords["vertex"].attrs, "hex_res must be in x.coords['vertex'].attrs"
 
-    hex_res = x.attrs["hex_res"]
+    hex_res = x.coords["vertex"].attrs["hex_res"]
     # hex_idx = np.array([int(h3.geo_to_h3(v.lat.item(), v.lon.item(), hex_res), base=16) for v in x.vertex])
     hex_coords = x.coords["vertex"].values
     x_vals = x.values
@@ -119,5 +125,5 @@ def filledgrid_from_hexgrid(x: xr.DataArray, res=1) -> xr.DataArray:
             h = int(h3.geo_to_h3(lat, lon, hex_res), base=16)
             g[i, j] = get_v(h)
     da = xr.DataArray(g, coords={"lat": lats, "lon": lons}, dims=["lat", "lon"], attrs=x.attrs, name=x.name)
-    da.attrs.pop("hex_res")
+
     return da

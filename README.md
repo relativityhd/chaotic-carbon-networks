@@ -1,4 +1,4 @@
-# chaotic-carbon-networks
+# Chaotic Carbon Networks
 
 Prereq:
 
@@ -35,27 +35,17 @@ python myfile.py
 
 ## Data
 
-Extract the downloaded and compressed data:
+This project uses multiple Data Sources:
 
-> Expects the downloaded data to be in . and extracts the data to ../original/
-
-```sh
-cd data/graced/compressed
-cat *.tar.gz | tar -xvf - -C ../original -z -i
-```
-
-## Data from
-
-[Population (GHSL) from EU](https://ghsl.jrc.ec.europa.eu/download.php?ds=pop)
-
-Expected Directory
+- [GRACED](https://www.carbonmonitor-graced.com/datasets.html) for CO2 emissions
+- [Aqua AIRS](https://disc.gsfc.nasa.gov/datasets/SNDRAQIL3CMCCP_2/summary) for Atmosphere CO2 concentration
+- [Population (GHSL) from EU](https://ghsl.jrc.ec.europa.eu/download.php?ds=pop)
+- [Global Ocean Shapes](https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-ocean/)
 
 ```sh
-tree data
+$ tree ./data
  data/
 ├──  aqua-airs/
-│  ├──  download.py
-│  ├──  How_to_Access_GES_DISC_Data_Using_Python.ipynb
 │  ├──  raw/
 │  ├──  subset_SNDRAQIL3CMCCP_2_20240319_201838_.txt
 ├──  graced/
@@ -70,47 +60,84 @@ tree data
 │  ├──  ne_10m_ocean.shp
 │  ├──  ne_10m_ocean.shx
 │  └──  ne_10m_ocean.VERSION.txt
-├──  population/
-│  ├──  cache/
-│  ├──  GHS_POP_E2020_GLOBE_R2023A_4326_30ss_V1_0.tif
-│  ├──  GHS_POP_E2020_GLOBE_R2023A_4326_30ss_V1_0.tif.ovr
-│  ├──  GHS_POP_GLOBE_R2023A_input_metadata.xlsx
-│  └──  GHSL_Data_Package_2023.pdf
-└──  xco2_c3s_l3_v42_200301_201912_2x2.nc
+└──  population/
+   ├──  cache/
+   ├──  GHS_POP_E2020_GLOBE_R2023A_4326_30ss_V1_0.tif
+   ├──  GHS_POP_E2020_GLOBE_R2023A_4326_30ss_V1_0.tif.ovr
+   ├──  GHS_POP_GLOBE_R2023A_input_metadata.xlsx
+   └──  GHSL_Data_Package_2
 ```
+
+## GRACED
+
+Unfortunatly the data download of the GRACED webpage is a little bit bugged... Therefore I manually downloaded the data month-wise and used the following to extract the data to `.nc` files.
+
+Extract the downloaded and compressed data:
+
+> Expects the downloaded data to be in . and extracts the data to ../original/
+
+```sh
+cd data/graced/compressed
+cat *.tar.gz | tar -xvf - -C ../original -z -i
+```
+
+## Aqua AIRS
+
+To download the data please read this website: [Aqua AIRS](https://disc.gsfc.nasa.gov/datasets/SNDRAQIL3CMCCP_2/summary)
+I provided a download script `chaotic_carbon_networks.download`. You can read more here.
 
 ## Methods and outcomes
 
 ```mermaid
 graph TB;
-    a(Raw CO2 Data);
-    b(CO2 Anomaly);
-    c(Similarity Matrix);
-    d(Adjencency Matrix);
-    e(Link-Length Adjencency Matrix);
-    f[["Vertex-Connectivity\n(Degree)"]];
-    g[["Area Weighted Vertex-Connectivity\n(Lat-Corrected Degree)"]];
-    h[[Avg. Vertex Link-Length]];
-    k[["Vertex-Betweenness"]];
+    Data --> Matrix;
+    Matrix --> Network-Measures;
+    Anomaly-Correction-and-Masks --> Data;
 
-    a -->|Processing and anomaly corrections| b;
-    b --> Matrix;
-    Matrix --> Network;
+    subgraph Data;
+      direction TB;
+      da(Raw GRACED);
+      db[[CO2 Emission Anomaly]];
+      dc(Raw Aqua-AIRS);
+      dd[[CO2 Atmosphere-Concentration Anomaly]];
+      de>Processing, masking and corrections];
+      df>Processing, masking and corrections];
+
+      da --> de;
+      dc --> df;
+      de --> db;
+      df --> dd;
+
+    end;
+
+    subgraph Anomaly-Correction-and-Masks;
+      direction TB;
+      aa([Weekday Correction]);
+      ab([Month of Year Correction]);
+      ac([Spatial Correction]);
+      ad(["Polar Mask (60°)"]);
+      ae([Population Mask]);
+      af([Ocean Mask]);
+    end;
 
     subgraph Matrix;
       direction TB;
-      c(Pearson Correlation);
-      i(Lagged Pearson Correlation);
-      j(Mututal Information)
+      ma(Pearson Correlation);
+      mb(Lagged Pearson Correlation);
+      mc(Mututal Information);
+      md(Adjencency Matrix);
+      ma --> md
+      mb --> md
+      mc --> md
     end;
 
-    subgraph Network;
+    subgraph Network-Measures;
       direction TB;
-      d --> f;
-      d --> g;
-      d --> e;
-      e --> h;
-      d --> k;
+      na(Link-Length Matrix);
+      nb[["Vertex-Connectivity\n(Degree)"]];
+      nc[[Avg. Vertex Link-Length]];
+      nd[["Vertex-Betweenness"]];
+      na --> nc;
     end;
 
 ```

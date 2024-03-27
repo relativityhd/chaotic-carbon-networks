@@ -18,16 +18,3 @@ def anomaly_correction_month(da: xr.DataArray):
     da.attrs = attrs
     da.attrs["long_name"] += " Anomaly"
     return da
-
-
-def anomaly_correction_spatial(da: xr.DataArray):
-    """Corrects the GRACE anomalies on location"""
-    attrs = da.attrs.copy()
-    hex_res = da.attrs.get("hex_res", None)
-    if hex_res is None:
-        da = da - da.mean("lat").mean("lon")
-    else:
-        da = da - da.mean("vertex")
-    da.attrs = attrs
-    da.attrs["long_name"] += " Anomaly"
-    return da

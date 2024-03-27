@@ -1,1 +1,3 @@
-from chaotic_carbon_networks.rust_chaotic_carbon_networks import mind, lapend
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent
