@@ -35,7 +35,7 @@ def degrees(m: xr.DataArray, dim: MDIMS = "vertex_other", weighted=True):
 def average_link_length(m: xr.DataArray, ll: xr.DataArray, dim: MDIMS = "vertex_other"):
     dimo = "vertex" if dim == "vertex_other" else "vertex_other"
     mll = m * ll
-    avgll = mll.where(mll > 0).mean(dim=dim)
+    avgll = mll.mean(dim=dim)
 
     if not axis_is_hex(avgll, dimo):
         avgll = avgll.unstack(dimo)

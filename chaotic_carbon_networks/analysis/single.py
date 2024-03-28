@@ -67,7 +67,7 @@ def single_dataset(x: xr.DataArray, adj_method: ADJ_METHODS = "similarity", rr=0
     plot_matrix_to_axis(a, ax5)
 
     ax6 = fig.add_subplot(gs[1, 3])
-    m.where(m > m.quantile(0.02)).plot.hist(bins=100, ax=ax6)
+    m.where(m > max(0, m.quantile(0.01))).plot.hist(bins=100, ax=ax6)
 
     fig.suptitle(f"Full Network Analysis on {x.attrs['long_name']}")
 

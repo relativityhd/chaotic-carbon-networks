@@ -4,6 +4,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import cartopy.crs as ccrs
+import seaborn as sns
 
 from chaotic_carbon_networks.matrix import (
     laged_pearson_similarity_matrix,
@@ -22,6 +23,21 @@ FIG_DIR.mkdir(exist_ok=True)
 
 
 ADJ_METHODS = Literal["lagged_similarity", "mutual_information"]
+
+
+def plot_meanovertime(x: xr.DataArray, y: xr.DataArray, ax):
+    palette = sns.color_palette("Set2", 2)
+    x_is_hex = len(x.dims) == 2
+    y_is_hex = len(x.dims) == 2
+    if x_is_hex:
+        x.mean(dim="vertex").plot(ax=ax, label=x.long_name, c=palette[0])
+    else:
+        x.mean(dim=["lat", "lon"]).plot(ax=ax, label=x.long_name, c=palette[0])
+    if y_is_hex:
+        y.mean(dim="vertex").plot(ax=ax.twinx(), label=y.long_name, c=palette[1])
+    else:
+        y.mean(dim=["lat", "lon"]).plot(ax=ax, label=y.long_name, c=palette[1])
+    ax.legend()
 
 
 def double_dataset(
@@ -62,20 +78,13 @@ def double_dataset(
     plot_world_to_axis(dego, ax3, "viridis")
 
     ax4 = fig.add_subplot(gs[0, 2:])
-    if x_is_hex:
-        x.mean(dim=["vertex"], keep_attrs=True).plot(ax=ax4)
-    else:
-        x.mean(dim=["lat", "lon"], keep_attrs=True).plot(ax=ax4)
-    if y_is_hex:
-        y.mean(dim=["vertex"], keep_attrs=True).plot(ax=ax4)
-    else:
-        y.mean(dim=["lat", "lon"], keep_attrs=True).plot(ax=ax4)
+    plot_meanovertime(x, y, ax4)
 
     ax5 = fig.add_subplot(gs[1, 2])
     plot_matrix_to_axis(a, ax5)
 
     ax6 = fig.add_subplot(gs[1, 3])
-    m.where(m > m.quantile(0.02)).plot.hist(bins=100, ax=ax6)
+    m.where(m > max(0, m.quantile(0.01))).plot.hist(bins=100, ax=ax6)
 
     fig.suptitle(f"Full Network Analysis on {x.attrs['long_name']}")
 
