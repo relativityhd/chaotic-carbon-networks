@@ -5,7 +5,7 @@ from typing import Literal
 import numpy as np
 from numba import njit
 import pickle
-from pathlib import Path
+from shapely.geometry import Polygon
 
 from chaotic_carbon_networks import ROOT
 
@@ -18,6 +18,8 @@ CACHE_DIR.mkdir(exist_ok=True, parents=True)
 
 
 def axis_is_hex(x, dim):
+    if dim not in x.dims:
+        return False
     return x.coords[dim].attrs.get("hex_res", False)
 
 
@@ -47,6 +49,19 @@ def hex_to_latlon(x: xr.DataArray, final_res: int = None):
     mindex_coords = xr.Coordinates.from_pandas_multiindex(mindex_obj, "vertex")
     x = x.assign_coords(mindex_coords)
     return x
+
+
+def h3_to_geom(x):
+    h = str(hex(x.item()))[2:]
+    b = h3.h3_to_geo_boundary(h, geo_json=True)
+
+    # Check if polygon crosses the antimeridian
+    lon_values = [coord[0] for coord in b]
+    crosses_antimeridian = -90 > min(lon_values) and 90 < max(lon_values)
+    if crosses_antimeridian:
+        b = [(coords[0] + 360 if coords[0] < -90 else coords[0], coords[1]) for coords in b]
+
+    return Polygon(b)  # if not crosses_antimeridian else None
 
 
 def hexgrid(x: xr.DataArray, method: ResampleMethod = "mean", hex_res: int = 2):
