@@ -20,7 +20,7 @@ CACHE_DIR.mkdir(exist_ok=True, parents=True)
 def axis_is_hex(x, dim):
     if dim not in x.dims:
         return False
-    return x.coords[dim].attrs.get("hex_res", False)
+    return isinstance(x.coords[dim].attrs.get("hex_res", False), (int, np.int64))
 
 
 def latlon_to_hex(x: xr.DataArray, hex_res: int = 2):

@@ -36,7 +36,7 @@ def single_dataset(x: xr.DataArray, adj_method: ADJ_METHODS = "similarity", rr=0
     elif adj_method == "lagged_similarity":
         m = laged_pearson_similarity_matrix(x)
     elif adj_method == "mutual_information":
-        m = mutual_information_matrix(x)
+        m = mutual_information_matrix(x, bins=32)
     else:
         raise ValueError(f"adj_method must be one of {ADJ_METHODS}")
 

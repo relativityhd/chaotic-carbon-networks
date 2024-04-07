@@ -6,6 +6,8 @@ from typing import Literal
 from datetime import datetime
 
 from chaotic_carbon_networks import ROOT
+from chaotic_carbon_networks.masks import mask_population
+from chaotic_carbon_networks.hex import hexgrid
 
 DATA_DIR = ROOT / "data"
 
@@ -53,6 +55,39 @@ def concat_graced_data(resample: int = None, method: ResampleMethod = "mean", fo
 
     # Convert from kgC/h to kgC
     co2 = co2 * 24
+
+    co2.attrs = {"units": "kgC", "long_name": "Carbon Dioxide Emissions"}
+    co2.name = fname.strip(".nc")
+
+    print(f"Saving data to {cached}")
+    co2.to_netcdf(cached)
+
+    return co2
+
+
+def preprocess_graced_data(hex_res: int = 3, force=False):
+    RAW_DIR = DATA_DIR / "graced" / "original"
+    CACHE_DIR = DATA_DIR / "graced" / "cache"
+    CACHE_DIR.mkdir(exist_ok=True, parents=True)
+
+    fname = f"preprocessed_res{hex_res}.nc"
+    cached = CACHE_DIR / fname
+    if cached.exists() and not force:
+        print(f"Loading cached data from {cached}")
+        return xr.open_dataarray(cached)
+
+    files = list(RAW_DIR.glob("*.nc"))
+    arrays = []
+    for file in track(files):
+        da = xr.open_dataarray(file)
+        da = da.rename({"latitude": "lat", "longitude": "lon", "nday": "time"})
+        # Convert from kgC/h to kgC
+        da = da * 24
+        da = mask_population(da)
+        da = hexgrid(da, method="sum", hex_res=hex_res)
+        arrays.append(da)
+    co2 = xr.concat(arrays, dim="time").sortby("time")
+    co2.vertex.attrs = {"hex_res": hex_res}
 
     co2.attrs = {"units": "kgC", "long_name": "Carbon Dioxide Emissions"}
     co2.name = fname.strip(".nc")

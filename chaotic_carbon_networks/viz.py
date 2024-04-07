@@ -36,19 +36,24 @@ def plot_world(da: xr.DataArray):
     plt.gca().gridlines(draw_labels=True)
 
 
-def plot_world_to_axis(da: xr.DataArray, ax, cmap="viridis", nocbar=False):
+def plot_world_to_axis(da: xr.DataArray, ax, cmap="viridis", nocbar=False, vmin=None, vmax=None):
     if axis_is_hex(da, "vertex"):
         cmap = cm.get_cmap(cmap)
-        norm = colors.Normalize(vmin=da.quantile(0.02), vmax=da.quantile(0.98))
+        norm = colors.Normalize(vmin=vmin or da.quantile(0.02), vmax=vmax or da.quantile(0.98))
         rgba = cmap(norm(da.values.tolist()))
-        c = [colors.rgb2hex(c) for c in rgba]
         geoms = [h3_to_geom(h) for h in da.vertex]
+        c = {g: colors.rgb2hex(c) for g, c in zip(geoms, rgba)}
 
-        ax.add_geometries(geoms, crs=crs_epsg, facecolors=c, linewidth=0)
+        def styler(geometry):
+            return {"facecolor": c[geometry]}
+
+        ax.add_geometries(geoms, crs=crs_epsg, styler=styler, linewidth=0)
         ax.add_feature(cfeature.COASTLINE, linewidth=1)
         ax.add_feature(cfeature.BORDERS, linewidth=1)
         ax.gridlines(draw_labels=True)
         ax.set_extent([-180, 180, -83, 83])
+        # For some unknown reason, set_extent will reorder the association between geometries and colors
+        # Note: now it works because I use the styler function
         title = None
         if "long_name" in da.attrs:
             title = da.long_name

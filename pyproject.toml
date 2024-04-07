@@ -51,8 +51,3 @@ lovely-numpy = "^0.2.11"
 networkx = "^3.2.1"
 scikit-learn = "^1.4.1.post1"
 fast-histogram = "^0.12"
-
-
-# [build-system]
-# requires = ["poetry-core"]
-# build-backend = "poetry.core.masonry.api"
