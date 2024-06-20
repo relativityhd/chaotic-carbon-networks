@@ -21,11 +21,12 @@ def assert_dims(x: xr.DataArray):
         assert "lon" in x.dims, "x must have lon dimension"
 
 
-def get_coords(x: xr.DataArray, is_hex: bool):
+def get_coords(x: xr.DataArray, is_hex: bool, other: bool):
     vertex_coords: np.ndarray = x.coords["vertex"].values
     if is_hex:
         return vertex_coords.copy()
-    vertex_multiindex = pd.MultiIndex.from_tuples(vertex_coords, names=("lat", "lon"))
+    names = ("lat", "lon") if not other else ("lat_other", "lon_other")
+    vertex_multiindex = pd.MultiIndex.from_tuples(vertex_coords, names=names)
     return vertex_multiindex
 
 
@@ -47,8 +48,8 @@ def xrmatrix_from_func(x: xr.DataArray, y: xr.DataArray, f: Callable[[np.ndarray
     if not y_is_hex:
         y = y.stack(vertex=("lat", "lon")).dropna(dim="vertex", how="all")
 
-    vcoords = get_coords(x, x_is_hex)
-    vocoords = get_coords(y, y_is_hex)
+    vcoords = get_coords(x, x_is_hex, False)
+    vocoords = get_coords(y, y_is_hex, True)
 
     m = f(x.values, y.values)
     m = xr.DataArray(
